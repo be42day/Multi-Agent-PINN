@@ -24,7 +24,7 @@ The framework is orchestrated through a role-playing multi-agent workflow:
 
 ## 🛠️ Tech Stack
 * **Deep Learning:** PyTorch
-* **Agent Orchestration:** [Insert your tool, e.g., LangChain / CrewAI / AutoGen]
+* **Agent Orchestration:** LangGraph
 * **Physics Modeling:** COMSOL Multiphysics (for reference validation)
 
 ---
