@@ -2,6 +2,7 @@
 
 **Notice:** The code and methodology in this repository are part of the paper:
 > *"A Multi-Agent Framework for Automated Design and Training of Physics-Informed Neural Networks: Application to Natural Convection in Porous Media"* 
+
 > **Status:** Submitted to *Engineering Applications of Artificial Intelligence* (Under Review, July 2026).
 
 ---
@@ -22,14 +23,15 @@ The main novelty of this study is the development of a Large Language Model (LLM
 To evaluate the framework, it is applied to a thermo-fluid problem involving heat transfer and natural convection in a porous medium, governed by the Brinkman–Boussinesq equations. Its performance is validated using 10,000 COMSOL Multiphysics reference points that were not used during training. The results show relative errors of approximately 1% for temperature and 0.5% for pressure, demonstrating that a systematically designed PINN can accurately reconstruct complex physical behaviors while reducing reliance on manual tuning.
 
 ## 🧠 The Multi-Agent Architecture
-The framework is orchestrated through a role-playing multi-agent workflow[cite: 2]:
-1. **The Manager Agent:** Oversees the pipeline, receives the initial problem, and delegates tasks[cite: 2].
-2. **The Designer Agent:** Formulates the physical equations and designs the neural network architecture[cite: 2].
-3. **The Trainer Agent:** Executes the PyTorch training loop and sends initial losses back[cite: 2].
-4. **The Reporter Agent:** Generates reports on the model's accuracy and final work history[cite: 2].
+The proposed framework consists of four specialized agents with coordinated operational logic:
+
+1. **The Manager Agent:** Coordinates the overall workflow of the framework. It defines the high-level objectives, manages interactions among agents, and determines whether a newly proposed architecture should be trained, refined, or passed to the reporting stage based on the obtained results.
+2. **The Designer Agent:** Responsible for proposing candidate PINN configurations. Based on the problem definition and feedback from previous training attempts, it suggests suitable fully connected network architectures and training-related settings. The proposed configuration is then sent to the Manager in a structured format.
+3. **The Trainer Agent:** Performs the computational training and evaluation. Given a candidate network architecture, it initializes the PINN model, generates interior collocation and boundary points, computes physics-based losses, and executes the predefined optimization procedure. Finally, it evaluates the best model using reference validation data and returns error metrics to the workflow.
+4. **The Reporter Agent:** Organizes the outputs generated during the entire workflow (including the selected architectures, training logs, and final error metrics) into a structured scientific report.
 
 ![Agent Interaction Flowchart](images/agents_interaction.png)
-*Figure 2: The interaction loop between the Manager, Designer, Trainer, and Reporter agents.*
+*Figure 2: Schematic illustration of the proposed multi-agent system and the interaction workflow among agents.*
 
 ## 🔬 Key Results
 * **Accuracy:** Successfully modeled natural convection in porous media, reproducing reference COMSOL Multiphysics results with **< 1% error**.
