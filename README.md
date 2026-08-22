@@ -42,3 +42,8 @@ The framework is orchestrated through a role-playing multi-agent workflow[cite: 
 * **Deep Learning:** PyTorch
 * **Agent Orchestration:** LangChain
 * **Physics Modeling:** COMSOL Multiphysics (for reference validation)
+
+---
+**Note on Code Availability:** 
+
+As the associated manuscript is currently under peer review, this repository contains the core architectural components. The complete training datasets, pre-trained weights, and full reproduction scripts will be made publicly available upon publication of the paper.
