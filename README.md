@@ -14,6 +14,13 @@ Architecting a Physics-Informed Neural Network (PINN) typically relies on heavy 
 
 Instead of blind trial-and-error, specialized agents reason about the physics, propose network architectures, execute the training loop, and use engineering solvers (like COMSOL) as **verifiable supervisors (rewards)** to validate the network's outputs.
 
+## 📄 Abstract
+Physics-Informed Neural Networks (PINNs) have emerged as a promising approach for solving engineering problems governed by partial differential equations. However, their performance strongly depends on network architecture selection, hyperparameter tuning, and the appropriate weighting of different loss-function components, which are often determined manually through expert experience and extensive trial and error. 
+
+The main novelty of this study is the development of a Large Language Model (LLM)-based multi-agent framework for automating the design, training, and evaluation of PINNs. In the proposed framework, specialized agents with coordinated operational logic propose network architectures, define training strategies, support the weighting of physics-based loss terms, monitor the learning process, evaluate model performance, and generate structured scientific reports. 
+
+To evaluate the framework, it is applied to a thermo-fluid problem involving heat transfer and natural convection in a porous medium, governed by the Brinkman–Boussinesq equations. Its performance is validated using 10,000 COMSOL Multiphysics reference points that were not used during training. The results show relative errors of approximately 1% for temperature and 0.5% for pressure, demonstrating that a systematically designed PINN can accurately reconstruct complex physical behaviors while reducing reliance on manual tuning.
+
 ## 🧠 The Multi-Agent Architecture
 The framework is orchestrated through a role-playing multi-agent workflow[cite: 2]:
 1. **The Manager Agent:** Oversees the pipeline, receives the initial problem, and delegates tasks[cite: 2].
