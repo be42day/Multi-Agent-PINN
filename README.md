@@ -33,6 +33,9 @@ The proposed framework consists of four specialized agents with coordinated oper
 ![Agent Interaction Flowchart](images/agents_interaction.png)
 *Figure 2: Schematic illustration of the proposed multi-agent system and the interaction workflow among agents.*
 
+> 💡 **Want to see how the agents "think" and interact?** 
+> Check out the [Agent Communication Log](agent_communication_log.txt) to see a real dialogue where the Manager requests a network architecture and the Designer uses physical reasoning to propose a 5-layer, 64-neuron FCN based on Brinkman-Forchheimer equations.
+
 ## 🔬 Key Results
 * **Accuracy:** Successfully modeled natural convection in porous media, reproducing reference COMSOL Multiphysics results with **< 1% error**.
 * **Automation:** Eliminated manual hyperparameter tuning by allowing agents to autonomously iterate based on verifiable physical constraints.
