@@ -265,17 +265,10 @@ class PINNTrainer:
         losses['bc_dT_dy_top'] = dT_dy_t.pow(2).mean()
         losses['bc_u_top'] = u_t_pred.pow(2).mean() + v_t_pred.pow(2).mean()
 
-        # --- NEW: Pressure Reference Point ---
-        # To ensure a unique pressure solution for this closed, incompressible flow problem,
-        # we pin the pressure value at a single point (e.g., at (0, 0)).
-
         # Get device and dtype from an existing tensor to ensure consistency
         device = x_l.device
         dtype = x_l.dtype
 
-        # Note: Assuming your domain is [0, 0.1] x [0, 0.1], the reference point is (0,0).
-        # If you have normalized your coordinates to [-1, 1], this point should be (-1, -1).
-        # Let's assume the physical coordinates [0, 0] are used here.
         ref_point_coords = torch.tensor([[-1.0, -1.0]], device=device, dtype=dtype)
 
         _, P_ref_pred, _, _ = self.model(ref_point_coords[:, 0:1], ref_point_coords[:, 1:2])
@@ -287,33 +280,24 @@ class PINNTrainer:
 
     def compute_total_loss(self, collocation_points):
         pde_losses = self.compute_pde_losses(collocation_points['interior'])
-        bc_losses = self.compute_bc_losses(collocation_points) # زیان‌های مرزی اینجا تعریف شده
+        bc_losses = self.compute_bc_losses(collocation_points)
 
         total_loss = 0.0
         loss_components = {}
         all_losses = {**pde_losses, **bc_losses}
 
-        # <<< FIX: Using the correct variable 'bc_losses' instead of 'losses' >>>
-
-        # تجمیع زیان‌های شرایط مرزی برای وزن‌دهی ساده‌تر
         loss_components['bc_T'] = bc_losses.get('bc_T_left', 0) + bc_losses.get('bc_T_right', 0)
         loss_components['bc_u'] = bc_losses.get('bc_u_left', 0) + bc_losses.get('bc_u_right', 0) + bc_losses.get('bc_u_top', 0) + bc_losses.get('bc_u_bottom', 0)
         loss_components['bc_p'] = bc_losses.get('bc_p_ref', 0)
         loss_components['bc_neumann'] = bc_losses.get('bc_dT_dy_top', 0) + bc_losses.get('bc_dT_dy_bottom', 0)
 
-        # اضافه کردن زیان‌های معادلات حاکم
         loss_components.update(pde_losses)
 
-        # محاسبه کل زیان وزن‌دار
         for key, value in loss_components.items():
             weight = self.loss_weights.get(key, 1.0)
 
             total_loss += weight * value
 
-        # ذخیره مقادیر خام و بدون وزن برای تاریخچه آموزش
-        # self.history.update({k: v.item() for k, v in all_losses.items()})
-
-        # بازگرداندن زیان کل و مولفه‌های وزن‌دار (برای لاگ)
         return total_loss, {k: v.item() for k, v in loss_components.items()}
 
     def train(self, epochs_adam, epochs_lbfgs, n_interior,
@@ -384,23 +368,18 @@ class PINNTrainer:
         print(f"Training completed in {time.time() - start_time:.1f}s. Best loss: {best_loss:.4e}")
         print(f"\nAdam training finished after {epochs_adam} epochs. Best loss: {best_loss:.4e}")
 
-        # ----------------------------------------------------------------------
-        # فاز دوم: آموزش با L-BFGS
-        # ----------------------------------------------------------------------
         print("\n--- Loading best model and starting L-BFGS Optimization ---")
-        # بارگذاری بهترین مدل یافت شده توسط Adam
         checkpoint = torch.load('./results/best_model.pth')
         self.model.load_state_dict(checkpoint['model_state_dict'])
 
         optimizer_lbfgs = optim.LBFGS(
             self.model.parameters(),
-            lr=1.0,  # در L-BFGS معمولا lr=1 مقدار مناسبی است
-            max_iter=20, # تعداد تکرار در هر step
+            lr=1.0,
+            max_iter=20,
             history_size=100,
-            line_search_fn="strong_wolfe" # الگوریتم پیشنهادی برای پایداری
+            line_search_fn="strong_wolfe"
         )
 
-        # L-BFGS به یک تابع closure نیاز دارد که loss را محاسبه و برمی‌گرداند
         def closure():
             optimizer_lbfgs.zero_grad()
             loss, _ = self.compute_total_loss(collocation_points)
@@ -411,10 +390,8 @@ class PINNTrainer:
         for epoch in progress_bar_lbfgs:
             self.model.train()
 
-            # گام بهینه‌سازی L-BFGS
             loss = optimizer_lbfgs.step(closure)
 
-            # لاگ کردن اطلاعات
             self.history['loss'].append(loss.item())
             _, loss_components = self.compute_total_loss(collocation_points) # محاسبه مجدد برای لاگ
             weighted_losses = {k: v * self.loss_weights.get(k, 1.0) for k, v in loss_components.items()}
@@ -423,14 +400,12 @@ class PINNTrainer:
 
             progress_bar_lbfgs.set_postfix({'loss': f'{loss.item():.4e}'})
 
-            # ذخیره بهترین مدل
             if loss.item() < best_loss:
                 best_loss = loss.item()
                 torch.save({'epoch': epoch + epochs_adam, 'model_state_dict': self.model.state_dict(),
                             'loss': best_loss}, './results/best_model.pth')
 
-            # چاپ و رسم نمودار
-            if (epoch + 1) % print_every == 0: # برای L-BFGS زودتر گزارش دهید
+            if (epoch + 1) % print_every == 0: 
                 print(f"\nL-BFGS Epoch {epoch+1}/{epochs_lbfgs} | Loss: {loss.item():.6e}")
                 print("Loss Components:")
                 # for key, value in sorted(loss_components.items()):
@@ -660,34 +635,18 @@ class TrainerAgent(BaseAgent):
         torch.manual_seed(42)
         np.random.seed(42)
 
-        # params = {
-        #     'mu': 1e-3,          # Viscosity of water (Pa.s)
-        #     'epsilon_p': 0.3,      # Porosity
-        #     'kappa': 1e-3,         # Permeability (m^2)
-        #     'rho_f': 1000.0,         # Density of water at avg temp (kg/m^3)
-        #     'beta': 2.07e-4,   # Thermal expansion coefficient (1/K)
-        #     'T_ref': 293.15,       # Reference temperature (K)
-        #     'C_p_f': 4200.0,         # Specific heat of water (J/kg.K)
-        #     'k_eff': 6,          # Effective thermal conductivity (W/m.K)
-        #     'g': 9.81,            # Gravity (m/s^2)
-        #     'T_h': 353.15,         # Hot wall temperature (K)
-        #     'T_c': 293.15,          # Cold wall temperature (K)
-        # }
-
         params = {
-            'mu': 1.81e-5,          # Pa.s (air at ~293 K)
-            'epsilon_p': 0.3,       # unchanged (porosity of matrix)
-            'kappa': 1e-3,          # unchanged (m^2) - property of matrix
-            'rho_f': 1.204,         # kg/m^3 (air at ~293 K, 1 atm)
-            'beta': 1.0/293.15,     # 1/K ~ 3.41e-3 for ideal gas at T_ref
-            'T_ref': 293.15,        # K (unchanged, but you can set as you wish)
-            'C_p_f': 1005.0,        # J/(kg·K)
-            # If you keep k_eff as a constant parameter, choose based on your matrix:
-            # e.g., using geometric mean with k_solid≈5 W/mK gives ~1.03 W/mK.
-            'k_eff': 6,          # W/(m·K)  <-- replace with your best estimate
-            'g': 9.81,              # m/s^2 (unchanged; mind the sign in your equations)
-            'T_h': 353.15,          # K (boundary condition)
-            'T_c': 293.15,          # K (boundary condition)
+            'mu': 1.81e-5,         
+            'epsilon_p': 0.3,      
+            'kappa': 1e-3,         
+            'rho_f': 1.204,       
+            'beta': 1.0/293.15,     
+            'T_ref': 293.15,        
+            'C_p_f': 1005.0,       
+            'k_eff': 6,        
+            'g': 9.81,            
+            'T_h': 353.15,        
+            'T_c': 293.15,         
         }
 
 
