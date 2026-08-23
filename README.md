@@ -46,7 +46,7 @@ The images below demonstrate the high accuracy of the agent-designed PINN compar
 ![PINN Solution Fields](images/pinn_plots.png)
 *Figure 3: Predicted solution fields (Temperature, Pressure, Velocity) generated autonomously by the Agent-designed PINN.*
 
-![COMSOL Reference Results](images/comsol_plots_2.jpg)
+![COMSOL Reference Results](images/comsol_plots.jpg)
 *Figure 4: Reference simulation results from COMSOL Multiphysics acting as the verifiable supervisor for the training loop.*
 
 ## 🛠️ Tech Stack
